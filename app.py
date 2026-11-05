@@ -41,7 +41,11 @@ def choose_file(title, filetypes=None):
     """Open the desktop's GTK file chooser when available, else use Tk's chooser."""
     zenity = shutil.which("zenity")
     if zenity:
-        command = [zenity, "--file-selection", f"--title={title}", "--modal"]
+        # GTK/Zenity remembers its last folder outside this app. An explicit
+        # starting directory avoids stale paths from older project locations.
+        home = os.path.expanduser("~")
+        command = [zenity, "--file-selection", f"--title={title}", "--modal",
+                   f"--filename={home}{os.sep}"]
         for label, patterns in filetypes or ():
             command.append(f"--file-filter={label} | {' '.join(patterns)}")
         try:
@@ -50,7 +54,7 @@ def choose_file(title, filetypes=None):
             pass
         else:
             return result.stdout.strip() if result.returncode == 0 else ""
-    options = {"title": title}
+    options = {"title": title, "initialdir": os.path.expanduser("~")}
     if filetypes:
         options["filetypes"] = filetypes
     return filedialog.askopenfilename(**options)
